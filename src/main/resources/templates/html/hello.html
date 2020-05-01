@@ -4,10 +4,19 @@
     <meta charset="UTF-8">
     <title>Title</title>
 
+    <script src="http://code.jquery.com/jquery-latest.js"></script>
+
     <script>
+
+        // 在线人员
+        var members = [];
+        // 在线人数
+        var onlineNum = 0;
+
         window.onload = function(){
             var websocket = null;
             var username = document.getElementById("user").innerText;
+            username = username.substr(5, username.length-4);
             //判断当前浏览器是否支持WebSocket
             if ('WebSocket' in window) {
                 websocket = new WebSocket("ws://localhost:8080/webSocket/" + username);
@@ -23,7 +32,7 @@
 
             //连接成功建立的回调方法
             websocket.onopen = function () {
-                alert("WebSocket连接成功");
+                alert("WebSocket连接成功，欢迎使用demo版在线聊天室");
             };
 
             //连接关闭的回调方法
@@ -43,31 +52,120 @@
 
             //接收到消息的回调方法
             websocket.onmessage = function (event) {
-                var show = document.getElementById("show");
 
-                var msg = document.createElement('p');
-                msg.innerHTML = event.data;
-                show.appendChild(msg);
+                // 分割消息与类型
+                var data = event.data;
+                var type = data.substring(0, data.indexOf('@'));
+                var message = data.substring(data.indexOf('@')+1, data.toString().length);
+                switch(type){
+                    case "MEMBER":
+                        message = message.substring(message.indexOf("[")+1, message.lastIndexOf("]"));
+                        members = message.split(",");
+                        onlineNum = members.length;
+                        break;
+                    case "ONLINE":
+                        members.push(message);
+                        onlineNum++;
+                        onlineReminder(message+"上线");
+                        break;
+                    case "OFFLINE":
+                        members = members.filter(function(item) {
+                            return item !== message;
+                        });
+                        onlineNum--;
+                        onlineReminder(message+"下线");
+                        break;
+                    case "MESSAGE":
+                        showMessage(message);
+                        break;
+                }
+
+                // 刷新在线版
+                if(type !== "MESSAGE"){
+                    flushOnlineBox();
+                }
+
 
             };
 
-            //将消息显示在网页上
-            function setMessageInnerHTML(innerHTML) {
-                document.getElementById('message').innerHTML += innerHTML + '<br/>';
+            // 上下线提醒
+            function onlineReminder(message){
+                var show = document.getElementById("show");
+                var oldHeight = show.scrollTop;
+                var msg = document.createElement('p');
+                msg.className = "reminder";
+                msg.innerHTML = message;
+                var br = document.createElement('br');
+                show.appendChild(msg);
+                show.appendChild(br);
+                if(show.scrollHeight-oldHeight < 500){
+                    // 进度条滚动到底部
+                    scroll(show.scrollHeight);
+                }
+            }
+
+            // 他人消息显示
+            function showMessage(message){
+                var show = document.getElementById("show");
+                var oldHeight = show.scrollTop;
+                var msg = document.createElement('p');
+                msg.className = "message";
+                msg.innerHTML = message;
+                var br = document.createElement('br');
+                show.appendChild(msg);
+                show.appendChild(br);
+                if(show.scrollHeight-oldHeight < 500){
+                    // 进度条滚动到底部
+                    scroll(show.scrollHeight);
+                }
+            }
+
+            // 自己消息显示
+            function showMyMessage(message){
+                var show = document.getElementById("show");
+                var msg = document.createElement('p');
+                msg.className = "myMessage";
+                msg.innerHTML = message;
+                var br = document.createElement('br');
+                show.appendChild(msg);
+                show.appendChild(br);
+                // 进度条滚动到底部
+                scroll(show.scrollHeight);
+            }
+
+            // 在线情况刷新
+            function flushOnlineBox(){
+                document.getElementById("number").innerHTML = "欢迎使用聊天室，当前在线"+onlineNum+"人";
+                var member = document.getElementById("member");
+                var pTag = member.innerHTML = "";
+                for(var i = 0; i < members.length; i++){
+                    var m = document.createElement('p');
+                    m.className = "m";
+                    m.innerHTML = (i+1) + "." + members[i];
+                    member.appendChild(m);
+                }
             }
 
             //发送消息
             function send() {
-                var message = document.getElementById('text').value;
+                var message = document.getElementById('text-box').value;
+                showMyMessage(message);
+                document.getElementById("text-box").value = "";
                 websocket.send(message);
             }
+
+            // 发送按钮
+            $('#send').click(function () {
+                send();
+            });
 
         }
     </script>
 
     <style>
         html {
-            background-color: lightblue;
+            background-color: #333;
+            color: white;
         }
         #box {
             position: absolute;
@@ -84,22 +182,225 @@
             left: 5%;
             width: 60%;
             height: 60%;
+            overflow: auto;
+            z-index: 5;
+        }
+        ::-webkit-scrollbar {
+             width: 6px;
+        }
+        ::-webkit-scrollbar-thumb {
+             background: #d8d8d8;
+             border-radius: 10px;
+         }
+        ::-webkit-scrollbar-track-piece {
+             background: transparent;
         }
 
+        .reminder {
+            background-color: #a1a1a1;
+            font-weight: lighter;
+            border-radius: 45px;
+            line-height: 18px;
+            font-size: 10px;
+            padding-left: 10px;
+            padding-right: 10px;
+            margin-top: 6px;
+            display: inline-block;
+        }
+        .message {
+            background-color: lightyellow;
+            color: black;
+            border-radius: 5px;
+            line-height: 40px;
+            padding-left: 10px;
+            padding-right: 10px;
+            margin-top: 6px;
+            display: inline-block;
+        }
+        .myMessage {
+            background-color: lightgreen;
+            color: black;
+            border-radius: 5px;
+            line-height: 40px;
+            padding-left: 10px;
+            padding-right: 10px;
+            margin-top: 6px;
+            display: inline-block;
+        }
+    </style>
+
+    <style>
+        #online{
+            position: absolute;
+            top: 5%;
+            right: 5%;
+            width: 25%;
+            height: 50%;
+            overflow: auto;
+            text-align: center;
+        }
+        #number {
+            position: absolute;
+            top: -10px;
+        }
+        #member {
+            position: absolute;
+            top: 10%;
+            margin-left: 5px;
+            margin-right: 5px;
+            line-height: 10px;
+        }
+    </style>
+
+    <style>
+        .line {
+            position: absolute;
+        }
+        #line1 {
+             border-top: solid #a1a1a1 3px;
+             width: 95%;
+             height: 1px;
+             left: 2.5%;
+             top: 70%;
+         }
+        #line2 {
+            border-right: solid #a1a1a1 3px;
+            width: 1px;
+            height: 300px;
+            left: 64.5%;
+            top: 5%;
+        }
+
+        #user-box {
+            position: absolute;
+            top: 55%;
+            right: 5%;
+            width: 25%;
+            height: 10%;
+            text-align: center;
+        }
+        #user {
+            position: absolute;
+            width: 100%;
+        }
+    </style>
+
+    <style>
+        textarea {
+            position: absolute;
+            top: 74%;
+            left: 4%;
+            width: 600px;
+            height: 100px;
+            resize: none;
+
+            border: 2px solid #5E6C77;
+            font-size: 1.1em;
+            padding: .25em .5em .3125em;
+            color: #5E6C77;
+            border-radius: .25em;
+            background: transparent;
+            -webkit-transition: all .100s;
+            transition: all .100s;
+        }
+        textarea:focus {
+            outline: none;
+            color: #A2ACB3;
+            border-color: #A2ACB3;
+        }
+        textarea.keyup {
+            color: white;
+            border-color: white;
+            text-shadow: 0 0 .125em white;
+            box-shadow: 0 0 .25em white,inset 0 0 .25em white;
+        }
+
+        textarea {
+            font-family: "Arial Rounded MT Bold","Helvetica Rounded",Arial,sans-serif;
+        }
+
+        textarea:focus::-webkit-input-placeholder {
+            opacity: .5;
+        }
+
+        textarea:focus::-moz-placeholder {
+            opacity: .5;
+        }
+
+        textarea:focus:-ms-input-placeholder {
+            opacity: .5;
+        }
+    </style>
+
+    <style>
+        .btn {
+            position: absolute;
+            top: 78%;
+            right: 7%;
+
+            font-size: 25px;
+            color: #fff;
+            padding: 20px;
+            width: 200px;
+            overflow: hidden;
+            text-align: center;
+            cursor: pointer;
+            text-transform: uppercase;
+            background-color: #5E6C77;
+            border-radius: 15px;
+        }
+        .btn.left:after {
+            left: 0;
+        }
+        .btn.stroke:after {
+            content: "";
+            background: #fff;
+            display: block;
+            position: absolute;
+            width: 200%;
+            height: 100%;
+            top: 0;
+            opacity: 0;
+            transition: all 0.75s ease-in-out;
+        }
+        .btn.stroke:active:after {
+            width: 0px;
+            opacity: 1;
+            transition: 0s;
+        }
     </style>
 
 </head>
 <body>
-
-    <p id="user">[[${session.user.userName}]]</p>
-
     <div id="box">
-        <div id="show">
+        <div id="user-box">
+            <p id="user">欢迎用户：[[${session.user.userName}]]</p>
+        </div>
+        <div id="show"></div>
 
+        <div id="online">
+            <p id="number">欢迎使用聊天室，当前在线1人</p>
+            <div id="member"></div>
         </div>
 
+        <div id="line1" class="line"></div>
+        <div id="line2" class="line"></div>
+
+        <textarea id="text-box" placeholder="Say something..."></textarea>
+
+        <div id="send" class="btn stroke left">Send</div>
 
     </div>
+
+    <script>
+        // 滚动条滚动
+        function scroll(scrollHeight) {
+            $('#show').animate({
+                scrollTop: scrollHeight+'px'
+            }, 800);
+        }
+    </script>
+
 
 </body>
 </html>

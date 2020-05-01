@@ -1,5 +1,6 @@
 package com.qklt.chatroom.controller;
 
+import com.qklt.chatroom.domain.MessageType;
 import org.springframework.stereotype.Component;
 
 import javax.websocket.OnClose;
@@ -26,24 +27,29 @@ public class WebsocketController {
 
     @OnOpen
     public void onOpen(Session session, @PathParam("username")String username){
-        if(!users.containsKey(username)){
-            broadcast(username+"上线，当前在线"+(users.size()+1)+"人");
-        }
-        ifOffline.remove(username);
         users.put(username, session);
         mySelf = username;
-        System.out.println("当前在线人数："+users.size());
+        if(ifOffline.contains(username)){
+            ifOffline.remove(username);
+        } else {
+            String message = packingMsg(MessageType.ONLINE, username, "");
+            broadcast(message);
+        }
+        String message = packingMsg(MessageType.MEMBER, username,users.keySet().toString());
+        session.getAsyncRemote().sendText(message);
+//        System.out.println("当前在线人数："+users.size());
     }
 
     @OnClose
     public void OnClose(@PathParam("username")String username){
-        ifOffline.add(username);
         readyOffline(username);
+        users.remove(username);
     }
  
     @OnMessage
     public void onMessage(@PathParam("username")String username, String message){
-        broadcast(username + "：" + message);
+        message = packingMsg(MessageType.MESSAGE, username, message);
+        broadcast(message);
     }
 
     /**
@@ -59,11 +65,40 @@ public class WebsocketController {
         }
     }
 
+    /**
+     * 消息包装
+     * @param type
+     * @param sender
+     * @param word
+     * @return
+     */
+    private String packingMsg(MessageType type, String sender,  String word){
+        String online = "ONLINE@";
+        String offline = "OFFLINE@";
+        String message = "MESSAGE@";
+        String member = "MEMBER@";
+        switch (type){
+            case ONLINE:
+                word = online + sender;
+                break;
+            case OFFLINE:
+                word = offline + sender;
+                break;
+            case MESSAGE:
+                word = message + sender + ":" + word;
+                break;
+            case MEMBER:
+                word = member + word;
+        }
+        return word;
+    }
+
     private void readyOffline(String username){
         new Thread(()->{
+            ifOffline.add(username);
             for(int i = 0; i < 10; i++){
                 try {
-                    Thread.sleep(1000);
+                    Thread.sleep(300);
                     // 10s内再次上线即不发广播
                     if(!ifOffline.contains(username)){
                         return;
@@ -72,10 +107,10 @@ public class WebsocketController {
                     e.printStackTrace();
                 }
             }
-            users.remove(username);
             ifOffline.remove(username);
-            broadcast(username+"下线，当前在线"+(users.size())+"人");
-            System.out.println("当前在线人数："+users.size());
+            String message = packingMsg(MessageType.OFFLINE, username, "");
+            broadcast(message);
+//            System.out.println("当前在线人数："+users.size());
         }).start();
     }
 
