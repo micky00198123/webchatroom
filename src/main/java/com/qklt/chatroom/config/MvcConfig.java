@@ -26,7 +26,7 @@ public class MvcConfig implements WebMvcConfigurer {
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(new LoginHandlerInterceptor())
-                .addPathPatterns("/html/welcome");
+                .addPathPatterns("/html/chatroom");
     }
 
 }

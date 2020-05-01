@@ -4,7 +4,7 @@
 <head>
 	<title>Login</title>
 
-	<link rel='shortcut.icon' th:href="@{/static/favicon.ico}" type='image/x-icon'/>
+	<link rel='shortcut.icon' th:href="@{/favicon.ico}" type='image/x-icon'/>
 
 	<style type="text/css">
 
@@ -95,11 +95,11 @@
 
 	</style>
 
-	<script th:src="@{/static/L2D/3Dpony/lib/L2Dwidget.min.js}"></script>
+	<script th:src="@{/L2D/3Dpony/lib/L2Dwidget.min.js}"></script>
 	<script type="text/javascript">
 		L2Dwidget.init({
 			"model": {
-				"jsonPath": "/mylogin/L2D/settings.json",
+				"jsonPath": "/chatroom/L2D/settings.json",
 				"scale": 1
 			},
 			"display": {
@@ -169,13 +169,13 @@
 
 		<input type="submit" value="登录" id="login"
 			   class="sub" onsubmit="return check()">
-		<a th:href="@{/templates/html/register}">还没有账号？点此注册</a>
+		<a th:href="@{/html/register}">还没有账号？点此注册</a>
 
 	</form>
 </div>
 
 <!-- 泡泡背景 -->
-<link rel="stylesheet" type="text/css" th:href="@{/static/css/Bubble.css}">
+<link rel="stylesheet" type="text/css" th:href="@{/css/Bubble.css}">
 <div class="wrap">
 	<div class="bubble b1"></div>
 	<div class="bubble b2"></div>

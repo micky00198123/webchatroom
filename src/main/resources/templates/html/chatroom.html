@@ -19,7 +19,7 @@
             username = username.substr(5, username.length-4);
             //判断当前浏览器是否支持WebSocket
             if ('WebSocket' in window) {
-                websocket = new WebSocket("ws://localhost:8080/webSocket/" + username);
+                websocket = new WebSocket("ws://121.36.26.175:8080/chatroom/webSocket/" + username);
             }
             else {
                 alert('当前浏览器不支持WebSocket，请更换浏览器！');
