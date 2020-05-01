@@ -27,14 +27,15 @@ public class WebsocketController {
 
     @OnOpen
     public void onOpen(Session session, @PathParam("username")String username){
-        users.put(username, session);
-        mySelf = username;
-        if(ifOffline.contains(username)){
+        // 防止多次登录或刷新
+        if(ifOffline.contains(username) || users.containsKey(username)){
             ifOffline.remove(username);
         } else {
             String message = packingMsg(MessageType.ONLINE, username, "");
             broadcast(message);
         }
+        users.put(username, session);
+        mySelf = username;
         String message = packingMsg(MessageType.MEMBER, username,users.keySet().toString());
         session.getAsyncRemote().sendText(message);
 //        System.out.println("当前在线人数："+users.size());
@@ -42,14 +43,17 @@ public class WebsocketController {
 
     @OnClose
     public void OnClose(@PathParam("username")String username){
-        readyOffline(username);
-        users.remove(username);
+        if(users.remove(username) != null){
+            readyOffline(username);
+        }
     }
  
     @OnMessage
     public void onMessage(@PathParam("username")String username, String message){
-        message = packingMsg(MessageType.MESSAGE, username, message);
-        broadcast(message);
+        if(users.containsKey(username)){
+            message = packingMsg(MessageType.MESSAGE, username, message);
+            broadcast(message);
+        }
     }
 
     /**

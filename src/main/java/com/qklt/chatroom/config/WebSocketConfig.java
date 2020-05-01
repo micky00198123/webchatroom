@@ -8,6 +8,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class WebSocketConfig {
 
+//    本地测试/内置tomcat测试需打开
 //    @Bean
 //    public ServerEndpointExporter confServerEndpointExporter(){
 //        return new ServerEndpointExporter();
