@@ -42,7 +42,7 @@ public class LoginController {
         User user = loginService.checkAccount(ld);
         if(user != null) {
             httpSession.setAttribute("user", user);
-            return "redirect:/html/hello";
+            return "redirect:/html/chatroom";
         } else {
             attr.addFlashAttribute("msg", "用户名或密码错误");
             return "redirect:/html/login";
