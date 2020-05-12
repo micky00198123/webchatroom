@@ -38,7 +38,6 @@ public class WebsocketController {
         mySelf = username;
         String message = packingMsg(MessageType.MEMBER, username,users.keySet().toString());
         session.getAsyncRemote().sendText(message);
-//        System.out.println("当前在线人数："+users.size());
     }
 
     @OnClose
@@ -114,7 +113,6 @@ public class WebsocketController {
             ifOffline.remove(username);
             String message = packingMsg(MessageType.OFFLINE, username, "");
             broadcast(message);
-//            System.out.println("当前在线人数："+users.size());
         }).start();
     }
 
